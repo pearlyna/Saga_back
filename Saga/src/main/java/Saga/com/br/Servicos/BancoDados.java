@@ -1,8 +1,8 @@
 package Saga.com.br.Servicos;
 
-import Saga.com.br.Entidades.Login;
+import Saga.com.br.Entidades.Cadastro;
 import Saga.com.br.Repositorios.Historias;
-import Saga.com.br.Repositorios.Logins;
+import Saga.com.br.Repositorios.Cadastros;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
@@ -15,19 +15,16 @@ public class BancoDados {
     private Historias historias;
 
     @Autowired
-    private Logins logins;
+    private Cadastros cadastros;
 
     @Bean
     public void instaciarBD() {
-        Login loginteste = new Login();
-        loginteste.setCep("012301230");
-        loginteste.setCpf(1231232);
-        loginteste.setEmail("maumau@123.com");
-        loginteste.setNome("Mauricio");
-        loginteste.setSenha("123");
+        Cadastro cadastroteste = new Cadastro();
+        cadastroteste.setCpf("11122345221");
+        cadastroteste.setEmail("maumau@123.com");
+        cadastroteste.setNome("Mauricio");
+        cadastroteste.setSenha("123");
 
-        logins.saveAll(asList(loginteste));
-
+        cadastros.saveAll(asList(cadastroteste));
     }
-
 }

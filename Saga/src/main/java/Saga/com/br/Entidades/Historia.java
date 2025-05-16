@@ -7,7 +7,7 @@ import java.io.Serializable;
 @Entity(name = "Historia")
 public class Historia implements Serializable {
 
-    private static final long serivalVersionUID = 1l;
+    private static final long serialVersionUID = 1L;  // Corrigido o nome da constante
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,13 +20,16 @@ public class Historia implements Serializable {
     @Column(name = "Imagem")
     String imagem;
 
-    @Column(name = "Historia_intro")
+    @Lob
+    @Column(name = "Historia_intro", columnDefinition = "LONGTEXT")
     String historia_intro;
 
-    @Column(name = "Historia_meio")
+    @Lob
+    @Column(name = "Historia_meio", columnDefinition = "LONGTEXT")
     String historia_meio;
 
-    @Column(name = "Historia_fim")
+    @Lob
+    @Column(name = "Historia_fim", columnDefinition = "LONGTEXT")
     String historia_fim;
 
     @Column(name = "Autor")
@@ -34,6 +37,8 @@ public class Historia implements Serializable {
 
     @Column(name = "Publicacao")
     String publicacao;
+
+    // Getters e Setters
 
     public Long getId() {
         return id;

@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.net.URI;
 import java.util.List;
 
+@CrossOrigin(origins = "*", maxAge = 33600)
 @RestController
 @RequestMapping(value = "/historia")
 public class EscreverHistorias {
@@ -23,33 +24,29 @@ public class EscreverHistorias {
     @Autowired
     private FuncaoHistoria funcaoHistoria;
 
-    // Diretório onde as imagens serão salvas
+    // diretório onde as imagens serão salvas
     private final String uploadDirectory = "uploads/";
 
-    // Get by ID
     @GetMapping(value = "/{id}")
     public ResponseEntity<Historia> findById(@PathVariable Integer id) {
         Historia historia = funcaoHistoria.findyById(id);
         return ResponseEntity.ok().body(historia);
     }
 
-    // Get all historias
+    // get todas as historias
     @GetMapping
     public ResponseEntity<List<HistoriaCapaDTO>> findAll() {
-        // Obtém todas as histórias do serviço
         List<Historia> historias = funcaoHistoria.findAll();
 
-        // Converte cada História para um DTO contendo id, título e imagem
+        // converter cada história para um DTO contendo id, título e imagem
         List<HistoriaCapaDTO> historiaDTOs = historias.stream()
                 .map(historia -> new HistoriaCapaDTO(historia.getId(), historia.getTitulo(), historia.getImagem()))
                 .toList();
-
-        // Retorna a lista de DTOs
         return ResponseEntity.ok().body(historiaDTOs);
     }
 
 
-    // Create a new historia (sem imagem inicialmente)
+    // criar uma nova historia
     @PostMapping
     public ResponseEntity<Historia> salvarHistoria(@RequestBody Historia historia) {
         historia = funcaoHistoria.salvarHistoria(historia);
@@ -58,62 +55,84 @@ public class EscreverHistorias {
         return ResponseEntity.created(uri).body(historia);
     }
 
-    // Upload de imagem para uma história existente
+    // post de imagem para uma história existente
     @PostMapping(value = "/{id}/imagem")
     public ResponseEntity<Void> uploadImagem(@PathVariable Integer id, @RequestParam("imagem") MultipartFile imagem) throws IOException {
-        // Validar a existência da história
         Historia historia = funcaoHistoria.findyById(id);
 
-        // Salvar a imagem no sistema de arquivos
+        // excluir a imagem anterior se houver
+        if (historia.getImagem() != null) {
+            Path oldImagePath = Paths.get(uploadDirectory, historia.getImagem());
+            if (Files.exists(oldImagePath)) {
+                Files.delete(oldImagePath);
+            }
+        }
+
+        // salvar a nova imagem
         String imagemNome = salvarImagem(imagem);
-
-        // Atualizar a história com o nome da imagem
         historia.setImagem(imagemNome);
-        funcaoHistoria.atualizarHistoria(id, historia);
 
+        // atualizar a história no banco de dados
+        funcaoHistoria.atualizarHistoria(id, historia);
         return ResponseEntity.ok().build();
     }
 
-    // Update a historia (sem atualizar imagem)
+
+    // endpoint para acessar a imagem
+    @GetMapping(value = "/imagem/{nomeImagem}")
+    public ResponseEntity<byte[]> getImagem(@PathVariable String nomeImagem) throws IOException {
+        // caminho para a imagem
+        Path caminho = Paths.get(uploadDirectory, nomeImagem);
+
+        // verificar se o arquivo existe
+        if (Files.exists(caminho)) {
+            byte[] imagemBytes = Files.readAllBytes(caminho);
+            return ResponseEntity.ok()
+                    .header("Content-Type", "image/jpeg")  // ajuste para o tipo correto da imagem
+                    .body(imagemBytes);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
+    // atualizar a historia
     @PutMapping(value = "/{id}")
     public ResponseEntity<Historia> atualizarHistoria(@PathVariable Integer id, @RequestBody Historia historia) {
         Historia alterado = funcaoHistoria.atualizarHistoria(id, historia);
         return ResponseEntity.ok().body(alterado);
     }
 
-    // Atualizar uma imagem de uma história existente
+    // atualizar uma imagem de uma história existente
     @PutMapping(value = "/{id}/imagem")
     public ResponseEntity<Void> atualizarImagem(@PathVariable Integer id, @RequestParam("imagem") MultipartFile imagem) throws IOException {
-        // Validar a existência da história
         Historia historia = funcaoHistoria.findyById(id);
-
-        // Salvar a nova imagem no sistema de arquivos
         String imagemNome = salvarImagem(imagem);
 
-        // Atualizar o campo de imagem da história no banco de dados
+        // atualizar o campo de imagem da história no banco de dados
         historia.setImagem(imagemNome);
         funcaoHistoria.atualizarHistoria(id, historia);
 
         return ResponseEntity.ok().build();
     }
 
-    // Delete a historia by ID
+    // deletar a historia by id
     @DeleteMapping(value = "/{id}")
     public ResponseEntity<Void> deletarHistoria(@PathVariable Integer id) {
         funcaoHistoria.deletarHistoria(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Método auxiliar para salvar a imagem no disco
+    // metodo auxiliar para salvar a imagem no disco
     private String salvarImagem(MultipartFile imagem) throws IOException {
-        // Gerar o caminho do arquivo
+        // gerar o caminho do arquivo
         String imagemNome = imagem.getOriginalFilename();
         Path caminho = Paths.get(uploadDirectory, imagemNome);
 
-        // Criar o diretório de uploads, se não existir
+        // criar o diretorio de uploads, se não existir
         Files.createDirectories(caminho.getParent());
 
-        // Escrever o arquivo no disco
+        // escrever o arquivo no disco
         Files.write(caminho, imagem.getBytes());
 
         return imagemNome;
